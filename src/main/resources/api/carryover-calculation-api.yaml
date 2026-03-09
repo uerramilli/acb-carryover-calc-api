@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: carryover-calculation-api
+  description: This API calculates the carryover values for a given year and month based on various financial data.
+paths:
+  /carryover:
+    get:
+      summary: Get carryover data for a specific year and month.
+      description: This endpoint calculates the carryover values and returns financial data.
+      operationId: getCarryOverData
+      parameters:
+        - name: year
+          in: query
+          description: The year for which to calculate the carryover data.
+          required: true
+          schema:
+            type: integer
+            example: 2026
+        - name: month
+          in: query
+          description: The month for which to calculate the carryover data.
+          required: true
+          schema:
+            type: integer
+            example: 3
+      responses:
+        '200':
+          description: A list of carryover data for the given year and month.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    entityid:
+                      type: string
+                      description: The entity identifier.
+                      example: '123456'
+                    entity_name:
+                      type: string
+                      description: The name of the entity.
+                      example: 'Acme Corp'
+                    marketid:
+                      type: integer
+                      description: The market ID.
+                      example: 1
+                    market:
+                      type: string
+                      description: The market name.
+                      example: 'North America'
+                    budget_cm:
+                      type: number
+                      format: float
+                      description: The budget for current month.
+                      example: 10000.00
+                    budget_ytd:
+                      type: number
+                      format: float
+                      description: The budget year-to-date.
+                      example: 50000.00
+                    unbudgeted_cm:
+                      type: number
+                      format: float
+                      description: The unbudgeted value for current month.
+                      example: 2000.00
+                    unbudgeted_ytd:
+                      type: number
+                      format: float
+                      description: The unbudgeted value year-to-date.
+                      example: 10000.00
+                    invoiced_cm:
+                      type: number
+                      format: float
+                      description: The invoiced value for current month.
+                      example: 15000.00
+                    invoiced_ytd:
+                      type: number
+                      format: float
+                      description: The invoiced value year-to-date.
+                      example: 75000.00
+                    variance_cm:
+                      type: number
+                      format: float
+                      description: The variance for current month.
+                      example: 5000.00
+                    variance_ytd:
+                      type: number
+                      format: float
+                      description: The variance year-to-date.
+                      example: 25000.00
+                    savings_cm:
+                      type: number
+                      format: float
+                      description: The savings for current month.
+                      example: 1000.00
+                    savings_ytd:
+                      type: number
+                      format: float
+                      description: The savings year-to-date.
+                      example: 5000.00
+                    carryover_expected_cm:
+                      type: number
+                      format: float
+                      description: The expected carryover for current month.
+                      example: 3000.00
+                    carryover_expected_ytd:
+                      type: number
+                      format: float
+                      description: The expected carryover year-to-date.
+                      example: 15000.00
+                    projection_completed:
+                      type: number
+                      format: float
+                      description: The completed projection value.
+                      example: 12000.00
+                    projection_estimate:
+                      type: number
+                      format: float
+                      description: The estimated projection value.
+                      example: 13000.00
+                    projection:
+                      type: number
+                      format: float
+                      description: The total projection.
+                      example: 12500.00
+                    budget:
+                      type: number
+                      format: float
+                      description: The overall budget.
+                      example: 14000.00
+                    variance:
+                      type: number
+                      format: float
+                      description: The variance from the budget.
+                      example: 5000.00
+        '400':
+          description: Bad request, invalid parameters.
+        '500':
+          description: Internal server error.
