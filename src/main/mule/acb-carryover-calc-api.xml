@@ -149,7 +149,7 @@ output application/json
   "projection_completed": 12000,
   "projection_estimate": 13000,
   "projection": 12500,
-  "budget": 14000,
+  "budget": 15000,
   "variance": 5000
 }]]]></ee:set-payload>
       </ee:message>
