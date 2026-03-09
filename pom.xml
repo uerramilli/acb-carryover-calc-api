@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.mycompany</groupId>
+    <groupId>c1ef5e9a-e5c6-486f-a943-d1a604b15530</groupId>
     <artifactId>acb-carryover-calc-api</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>mule-application</packaging>
     <name>acb-carryover-calc-api</name>
     <properties>
@@ -11,7 +11,140 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <app.runtime>4.11.0</app.runtime>
         <mule.maven.plugin.version>4.7.0</mule.maven.plugin.version>
+	<muleDeploy>true</muleDeploy>
+	<app.releasechannel>EDGE</app.releasechannel>
+	<app.javaversion>17</app.javaversion>
     </properties>
+    <!-- Mule maven plugin supports multiple deployment configurations in the same build, even across different profiles. 
+	     Ensure your profiles (dev, qa etc.) are not conflicting -->
+	<profiles>
+		<!-- CloudHub 2.0 Deployment -->
+		<!-- Development Profile (Sandbox) -->
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<mule.env>Sandbox</mule.env>
+	                        <!-- stick your business group name-->
+                                <mule.businessGroup>fairstone-demo</mule.businessGroup>
+				<app.name>acb-carryover-calc-api-dev</app.name>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.mule.tools.maven</groupId>
+						<artifactId>exchange-mule-maven-plugin</artifactId>
+						<version>0.0.23</version>
+						<executions>
+							<execution>
+								<id>exchange-pre-deploy</id>
+								<goals>
+									<goal>exchange-pre-deploy</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>exchange-deploy</id>
+								<goals>
+									<goal>exchange-deploy</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.mule.tools.maven</groupId>
+						<artifactId>mule-maven-plugin</artifactId>
+						<version>${mule.maven.plugin.version}</version>
+						<!-- Cloudhub2 deployment configuration -->
+						<configuration>
+							<cloudhub2Deployment>
+								<uri>https://anypoint.mulesoft.com</uri>
+								<muleVersion>${app.runtime}</muleVersion>
+								<releaseChannel>${app.releasechannel}</releaseChannel>
+								<javaVersion>${app.javaversion}</javaVersion>
+								<applicationName>${app.name}</applicationName>
+								<environment>${mule.env}</environment>
+								<businessGroup>${anypoint.businessGroup}</businessGroup>
+								<provider>MC</provider>
+								<replicas>1</replicas>
+								<vCores>0.1</vCores>
+								<target>Cloudhub-US-East-2</target>
+								<server>anypoint-exchange-v3</server>
+								<deploymentSettings>
+									<generateDefaultPublicUrl>true</generateDefaultPublicUrl>
+								</deploymentSettings>
+							</cloudhub2Deployment>
+							<classifier>mule-application</classifier>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- QA Profile (Test) -->
+		<profile>
+			<id>qa</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<mule.env>QA</mule.env>
+                                <!-- stick your business group name-->
+                                <mule.businessGroup>fairstone-demo</mule.businessGroup>
+				<app.name>acb-carryover-calc-api-qa</app.name>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.mule.tools.maven</groupId>
+						<artifactId>exchange-mule-maven-plugin</artifactId>
+						<version>0.0.23</version>
+						<executions>
+							<execution>
+								<id>exchange-pre-deploy</id>
+								<goals>
+									<goal>exchange-pre-deploy</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>exchange-deploy</id>
+								<goals>
+									<goal>exchange-deploy</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.mule.tools.maven</groupId>
+						<artifactId>mule-maven-plugin</artifactId>
+						<version>${mule.maven.plugin.version}</version>
+						<!-- Cloudhub2 deployment configuration -->
+						<configuration>
+							<cloudhub2Deployment>
+								<uri>https://anypoint.mulesoft.com</uri>
+								<muleVersion>${app.runtime}</muleVersion>
+								<releaseChannel>${app.releasechannel}</releaseChannel>
+								<javaVersion>${app.javaversion}</javaVersion>
+								<applicationName>${app.name}</applicationName>
+								<environment>${mule.env}</environment>
+								<businessGroup>${anypoint.businessGroup}</businessGroup>
+								<provider>MC</provider>
+								<replicas>1</replicas>
+								<vCores>0.1</vCores>
+								<target>Cloudhub-US-East-2</target>
+								<server>anypoint-exchange-v3</server>
+								<deploymentSettings>
+									<generateDefaultPublicUrl>true</generateDefaultPublicUrl>
+								</deploymentSettings>
+							</cloudhub2Deployment>
+							<classifier>mule-application</classifier>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
     <build>
         <plugins>
             <plugin>
@@ -53,6 +186,14 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
+    <distributionManagement>
+		<repository>
+			<id>anypoint-exchange-v3</id>
+			<name>Corporate Repository</name>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${project.groupId}/maven</url>
+			<layout>default</layout>
+		</repository>
+    </distributionManagement>
     <dependencies>
         <dependency>
             <groupId>c1ef5e9a-e5c6-486f-a943-d1a604b15530</groupId>
