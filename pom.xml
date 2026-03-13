@@ -28,7 +28,7 @@
 			<properties>
 				<mule.env>Sandbox</mule.env>
 	            <!-- stick your business group name-->
-                <mule.businessGroup>fairstone-demo</mule.businessGroup>
+                <anypoint.businessGroup>fairstone-demo</anypoint.businessGroup>
 				<app.name>acb-carryover-calc-api-dev</app.name>
 			</properties>
 			<build>
