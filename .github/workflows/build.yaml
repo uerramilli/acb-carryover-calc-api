@@ -26,7 +26,7 @@ jobs:
           "https://${{ secrets.ANYPOINT_HOST }}/exchange/api/v2/assets/${{ secrets.ANYPOINT_ORG }}/${{ secrets.SPEC_ASSET_ID }}" \
           | jq -r '.version')
 
-          PINNED=$(cat .spec-version 2>/dev/null || echo "unknown")
+          PINNED=$(cat .spec-version.txt 2>/dev/null || echo "unknown")
 
           if [ "$PINNED" != "$LATEST" ]; then
           echo "::warning::API spec update available in Exchange: pinned=$PINNED latest=$LATEST. Consider re-scaffolding."
