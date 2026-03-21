@@ -1,4 +1,4 @@
-name: Publish to Exchange & Deploy to CH2.0
+name: Publish to Exchange & Deploy to CH2
 
 on:
   push:
