@@ -172,6 +172,7 @@
                         <phase>test</phase>
                         <goals>
                             <goal>test</goal>
+							<goal>coverage-report</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -179,8 +180,35 @@
                     <!-- Skip MUnit tests by default (CI/CD builds) -->
                     <skipMunitTests>true</skipMunitTests>
                     <!-- Only run tests when explicitly requested with -DrunMunitTests=true -->
-                    <skipMunitTests>${skipMunitTests}</skipMunitTests>
-                </configuration>
+        			<suites>
+            			<suite>acb-carryover-calc-api-test-suite.xml</suite>
+        			</suites>
+
+        			<!-- ============================================== -->
+        			<!-- COVERAGE CONFIGURATION — currently inactive   -->
+        				<!-- Activated when skipMunitTests=false           -->
+       				 <!-- ============================================== -->
+        			<coverage>
+						<runCoverage>true</runCoverage>
+
+						<!-- Build fails if thresholds not met -->
+						<!-- Activate by removing -DskipMunitTests in build.yml -->
+						<failBuild>true</failBuild>
+
+						<!-- Unit test suite threshold (build job) -->
+						<requiredApplicationCoverage>80</requiredApplicationCoverage>
+
+						<!-- Flow and resource level thresholds -->
+						<requiredResourceCoverage>70</requiredResourceCoverage>
+						<requiredFlowCoverage>70</requiredFlowCoverage>
+
+						<!-- Coverage report formats — available at target/site/munit/coverage/ -->
+						<formats>
+							<format>html</format>
+							<format>json</format>
+						</formats>
+					</coverage>
+       			</configuration>
             </plugin>
         </plugins>
     </build>
