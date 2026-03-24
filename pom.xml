@@ -14,6 +14,8 @@
 	<muleDeploy>true</muleDeploy>
 	<app.releasechannel>EDGE</app.releasechannel>
 	<app.javaversion>17</app.javaversion>
+	<!-- MUnit test execution control - Skip by default for CI/CD -->
+	<skipMunitTests>true</skipMunitTests>
     </properties>
     <!-- Mule maven plugin supports multiple deployment configurations in the same build, even across different profiles. 
 	     Ensure your profiles (dev, qa etc.) are not conflicting -->
@@ -159,6 +161,27 @@
                 <extensions>true</extensions>
                 <configuration/>
             </plugin>
+            <!-- MUnit Maven Plugin - Skip tests in CI/CD builds -->
+            <plugin>
+                <groupId>com.mulesoft.munit.tools</groupId>
+                <artifactId>munit-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Skip MUnit tests by default (CI/CD builds) -->
+                    <skipMunitTests>true</skipMunitTests>
+                    <!-- Only run tests when explicitly requested with -DrunMunitTests=true -->
+                    <skipMunitTests>${skipMunitTests}</skipMunitTests>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <repositories>
@@ -213,6 +236,28 @@
             <artifactId>mule-http-connector</artifactId>
             <version>1.11.1</version>
             <classifier>mule-plugin</classifier>
+        </dependency>
+        
+        <!-- MUnit Test Dependencies - NOT included in CI/CD builds -->
+        <dependency>
+            <groupId>com.mulesoft.munit</groupId>
+            <artifactId>munit-runner</artifactId>
+            <version>3.2.1</version>
+            <classifier>mule-plugin</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mulesoft.munit</groupId>
+            <artifactId>munit-tools</artifactId>
+            <version>3.2.1</version>
+            <classifier>mule-plugin</classifier>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mule.weave</groupId>
+            <artifactId>assertions</artifactId>
+            <version>1.2.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

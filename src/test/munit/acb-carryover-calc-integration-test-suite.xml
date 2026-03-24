@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                         http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+                         http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+                         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+    <munit:config name="acb-carryover-calc-integration-test-suite.xml"/>
+
+    <!-- =============================================== -->
+    <!-- INTEGRATION TESTS - Full End-to-End -->
+    <!-- =============================================== -->
+
+    <munit:test name="integration-test-full-api-flow" doc:name="Full API Integration Test" description="Test the complete API flow from HTTP request to response">
+        <munit:behavior>
+            <set-variable value="2026" doc:name="Set test year" variableName="testYear"/>
+            <set-variable value="3" doc:name="Set test month" variableName="testMonth"/>
+        </munit:behavior>
+        <munit:execution>
+            <!-- Simulate the main API flow -->
+            <flow-ref doc:name="Call main flow" name="carryover-calculation-api-main"/>
+        </munit:execution>
+        <munit:validation>
+            <!-- Validate that the main flow processed successfully -->
+            <munit-tools:assert-that doc:name="Assert no error occurred" expression="#[error]" is="#[MunitTools::nullValue()]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="integration-test-data-transformation" doc:name="Test Data Transformation" description="Test that the data transformation produces correct structure">
+        <munit:execution>
+            <flow-ref doc:name="Call carryover flow" name="get:\carryover:carryover-calculation-api-config"/>
+        </munit:execution>
+        <munit:validation>
+            <!-- Validate complete data structure -->
+            <munit-tools:assert-that doc:name="Assert is array" expression="#[payload]" is="#[MunitTools::instanceOf('Array')]"/>
+            <munit-tools:assert-equals doc:name="Assert array size" actual="#[sizeOf(payload)]" expected="#[1]"/>
+            
+            <!-- Validate all required fields exist -->
+            <munit-tools:assert-that doc:name="Assert entityid exists" expression="#[payload[0].entityid]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert entity_name exists" expression="#[payload[0].entity_name]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert marketid exists" expression="#[payload[0].marketid]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert market exists" expression="#[payload[0].market]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert budget_cm exists" expression="#[payload[0].budget_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert budget_ytd exists" expression="#[payload[0].budget_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert unbudgeted_cm exists" expression="#[payload[0].unbudgeted_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert unbudgeted_ytd exists" expression="#[payload[0].unbudgeted_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert invoiced_cm exists" expression="#[payload[0].invoiced_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert invoiced_ytd exists" expression="#[payload[0].invoiced_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert variance_cm exists" expression="#[payload[0].variance_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert variance_ytd exists" expression="#[payload[0].variance_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert savings_cm exists" expression="#[payload[0].savings_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert savings_ytd exists" expression="#[payload[0].savings_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert carryover_expected_cm exists" expression="#[payload[0].carryover_expected_cm]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert carryover_expected_ytd exists" expression="#[payload[0].carryover_expected_ytd]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert projection_completed exists" expression="#[payload[0].projection_completed]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert projection_estimate exists" expression="#[payload[0].projection_estimate]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert projection exists" expression="#[payload[0].projection]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert budget exists" expression="#[payload[0].budget]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert variance exists" expression="#[payload[0].variance]" is="#[MunitTools::notNullValue()]"/>
+            
+            <!-- Validate data types -->
+            <munit-tools:assert-that doc:name="Assert entityid is string" expression="#[payload[0].entityid]" is="#[MunitTools::instanceOf('String')]"/>
+            <munit-tools:assert-that doc:name="Assert entity_name is string" expression="#[payload[0].entity_name]" is="#[MunitTools::instanceOf('String')]"/>
+            <munit-tools:assert-that doc:name="Assert marketid is number" expression="#[payload[0].marketid]" is="#[MunitTools::instanceOf('Number')]"/>
+            <munit-tools:assert-that doc:name="Assert market is string" expression="#[payload[0].market]" is="#[MunitTools::instanceOf('String')]"/>
+            <munit-tools:assert-that doc:name="Assert budget_cm is number" expression="#[payload[0].budget_cm]" is="#[MunitTools::instanceOf('Number')]"/>
+            <munit-tools:assert-that doc:name="Assert budget_ytd is number" expression="#[payload[0].budget_ytd]" is="#[MunitTools::instanceOf('Number')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="integration-test-logger-execution" doc:name="Test Logger Execution" description="Test that logger executes correctly in the flow">
+        <munit:behavior>
+            <!-- Mock logger to capture log message -->
+            <munit-tools:mock-when doc:name="Mock Logger" processor="logger">
+                <munit-tools:with-attributes>
+                    <munit-tools:with-attribute whereValue="INFO" attributeName="level"/>
+                </munit-tools:with-attributes>
+                <munit-tools:then-return>
+                    <munit-tools:payload value="#['Mocked logger message']"/>
+                </munit-tools:then-return>
+            </munit-tools:mock-when>
+        </munit:behavior>
+        <munit:execution>
+            <flow-ref doc:name="Call carryover flow" name="get:\carryover:carryover-calculation-api-config"/>
+        </munit:execution>
+        <munit:validation>
+            <!-- Verify logger was called -->
+            <munit-tools:verify-call doc:name="Verify logger was called" processor="logger" times="1">
+                <munit-tools:with-attributes>
+                    <munit-tools:with-attribute whereValue="INFO" attributeName="level"/>
+                </munit-tools:with-attributes>
+            </munit-tools:verify-call>
+        </munit:validation>
+    </munit:test>
+
+    <!-- =============================================== -->
+    <!-- PERFORMANCE AND LOAD TESTS -->
+    <!-- =============================================== -->
+
+    <munit:test name="performance-test-multiple-calls" doc:name="Performance Test - Multiple Calls" description="Test API performance with multiple sequential calls">
+        <munit:execution>
+            <!-- First call -->
+            <flow-ref doc:name="Call 1" name="get:\carryover:carryover-calculation-api-config"/>
+            <set-variable value="#[payload]" doc:name="Store result 1" variableName="result1"/>
+            
+            <!-- Second call -->
+            <flow-ref doc:name="Call 2" name="get:\carryover:carryover-calculation-api-config"/>
+            <set-variable value="#[payload]" doc:name="Store result 2" variableName="result2"/>
+            
+            <!-- Third call -->
+            <flow-ref doc:name="Call 3" name="get:\carryover:carryover-calculation-api-config"/>
+            <set-variable value="#[payload]" doc:name="Store result 3" variableName="result3"/>
+        </munit:execution>
+        <munit:validation>
+            <!-- Verify all calls returned consistent results -->
+            <munit-tools:assert-equals doc:name="Assert result 1 equals result 2" actual="#[vars.result1]" expected="#[vars.result2]"/>
+            <munit-tools:assert-equals doc:name="Assert result 2 equals result 3" actual="#[vars.result2]" expected="#[vars.result3]"/>
+            <munit-tools:assert-that doc:name="Assert all results are arrays" expression="#[vars.result1]" is="#[MunitTools::instanceOf('Array')]"/>
+        </munit:validation>
+    </munit:test>
+
+</mule>

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http"
+      xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                         http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+                         http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+                         http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+                         http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+	http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <munit:config name="acb-carryover-calc-api-test-suite.xml"/>
+
+    <!-- HTTP Request Configuration for testing -->
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration">
+        <http:request-connection host="localhost" port="8081"/>
+    </http:request-config>
+
+    <!-- =============================================== -->
+    <!-- HAPPY PATH TESTS -->
+    <!-- =============================================== -->
+    
+    <munit:test name="get-carryover-success-test" doc:name="Test GET /carryover success scenario" description="Test successful carryover calculation request with valid parameters">
+        <munit:behavior>
+            <munit-tools:mock-when doc:name="Mock HTTP Listener" processor="http:listener">
+                <munit-tools:with-attributes>
+                    <munit-tools:with-attribute whereValue="carryover-calculation-api-httpListenerConfig" attributeName="config-ref"/>
+                </munit-tools:with-attributes>
+                <munit-tools:then-return>
+                    <munit-tools:variables>
+                        <munit-tools:variable key="httpStatus" value="200"/>
+                        <munit-tools:variable key="outboundHeaders" value="#[{}]"/>
+                    </munit-tools:variables>
+                </munit-tools:then-return>
+            </munit-tools:mock-when>
+        </munit:behavior>
+        <munit:execution>
+            <http:request method="GET" doc:name="GET /carryover" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                <http:query-params><![CDATA[#[{
+                    year: 2026,
+                    month: 3
+                }]]]></http:query-params>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 200" actual="#[attributes.statusCode]" expected="#[200]"/>
+            <munit-tools:assert-that doc:name="Assert content type is JSON" expression="#[attributes.headers.'content-type']" is="#[MunitTools::containsString('application/json')]"/>
+            <munit-tools:assert-that doc:name="Assert payload is array" expression="#[payload]" is="#[MunitTools::instanceOf('Array')]"/>
+            <munit-tools:assert-that doc:name="Assert array not empty" expression="#[sizeOf(payload)]" is="#[MunitTools::greaterThan(0)]"/>
+            <!-- Validate required fields in response -->
+            <munit-tools:assert-that doc:name="Assert entityid exists" expression="#[payload[0].entityid]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-that doc:name="Assert entity_name exists" expression="#[payload[0].entity_name]" is="#[MunitTools::notNullValue()]"/>
+            <munit-tools:assert-equals doc:name="Assert entityid value" actual="#[payload[0].entityid]" expected="#['12345678']"/>
+            <munit-tools:assert-equals doc:name="Assert entity_name value" actual="#[payload[0].entity_name]" expected="#['Acme Corp']"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-carryover-flow-direct-test" doc:name="Test carryover flow directly" description="Test the carryover calculation flow directly without HTTP layer">
+        <munit:execution>
+            <flow-ref doc:name="Call get carryover flow" name="get:\carryover:carryover-calculation-api-config"/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that doc:name="Assert payload is array" expression="#[payload]" is="#[MunitTools::instanceOf('Array')]"/>
+            <munit-tools:assert-equals doc:name="Assert array size is 1" actual="#[sizeOf(payload)]" expected="#[1]"/>
+            <!-- Validate all expected fields exist -->
+            <munit-tools:assert-that doc:name="Assert marketid is number" expression="#[payload[0].marketid]" is="#[MunitTools::instanceOf('Number')]"/>
+            <munit-tools:assert-that doc:name="Assert budget_cm is number" expression="#[payload[0].budget_cm]" is="#[MunitTools::instanceOf('Number')]"/>
+            <munit-tools:assert-that doc:name="Assert budget_ytd is number" expression="#[payload[0].budget_ytd]" is="#[MunitTools::instanceOf('Number')]"/>
+            <!-- Validate specific values match expected output -->
+            <munit-tools:assert-equals doc:name="Assert marketid value" actual="#[payload[0].marketid]" expected="#[1]"/>
+            <munit-tools:assert-equals doc:name="Assert budget_cm value" actual="#[payload[0].budget_cm]" expected="#[10000]"/>
+            <munit-tools:assert-equals doc:name="Assert market value" actual="#[payload[0].market]" expected="#['North America']"/>
+        </munit:validation>
+    </munit:test>
+
+    <!-- =============================================== -->
+    <!-- ERROR SCENARIO TESTS -->
+    <!-- =============================================== -->
+
+    <munit:test name="get-carryover-missing-year-parameter-test" doc:name="Test GET /carryover missing year parameter" description="Test carryover request with missing year parameter">
+        <munit:execution>
+            <try doc:name="Try">
+                <http:request method="GET" doc:name="GET /carryover without year" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                    <http:query-params><![CDATA[#[{
+                        month: 3
+                    }]]]></http:query-params>
+                </http:request>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="HTTP:BAD_REQUEST">
+                        <set-variable value="#[error.errorMessage.payload]" doc:name="Set error payload" variableName="errorPayload"/>
+                        <set-variable value="#[400]" doc:name="Set status code" variableName="statusCode"/>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 400" actual="#[vars.statusCode]" expected="#[400]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-carryover-missing-month-parameter-test" doc:name="Test GET /carryover missing month parameter" description="Test carryover request with missing month parameter">
+        <munit:execution>
+            <try doc:name="Try">
+                <http:request method="GET" doc:name="GET /carryover without month" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                    <http:query-params><![CDATA[#[{
+                        year: 2026
+                    }]]]></http:query-params>
+                </http:request>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="HTTP:BAD_REQUEST">
+                        <set-variable value="#[error.errorMessage.payload]" doc:name="Set error payload" variableName="errorPayload"/>
+                        <set-variable value="#[400]" doc:name="Set status code" variableName="statusCode"/>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 400" actual="#[vars.statusCode]" expected="#[400]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-carryover-invalid-year-parameter-test" doc:name="Test GET /carryover invalid year parameter" description="Test carryover request with invalid year parameter type">
+        <munit:execution>
+            <try doc:name="Try">
+                <http:request method="GET" doc:name="GET /carryover with invalid year" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                    <http:query-params><![CDATA[#[{
+                        year: "invalid",
+                        month: 3
+                    }]]]></http:query-params>
+                </http:request>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="HTTP:BAD_REQUEST">
+                        <set-variable value="#[error.errorMessage.payload]" doc:name="Set error payload" variableName="errorPayload"/>
+                        <set-variable value="#[400]" doc:name="Set status code" variableName="statusCode"/>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 400" actual="#[vars.statusCode]" expected="#[400]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-carryover-invalid-month-parameter-test" doc:name="Test GET /carryover invalid month parameter" description="Test carryover request with invalid month parameter type">
+        <munit:execution>
+            <try doc:name="Try">
+                <http:request method="GET" doc:name="GET /carryover with invalid month" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                    <http:query-params><![CDATA[#[{
+                        year: 2026,
+                        month: "invalid"
+                    }]]]></http:query-params>
+                </http:request>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="HTTP:BAD_REQUEST">
+                        <set-variable value="#[error.errorMessage.payload]" doc:name="Set error payload" variableName="errorPayload"/>
+                        <set-variable value="#[400]" doc:name="Set status code" variableName="statusCode"/>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 400" actual="#[vars.statusCode]" expected="#[400]"/>
+        </munit:validation>
+    </munit:test>
+
+    <!-- =============================================== -->
+    <!-- ERROR HANDLER TESTS -->
+    <!-- =============================================== -->
+
+    <munit:test name="test-apikit-bad-request-error-handler" doc:name="Test APIKIT BAD_REQUEST error handler" description="Test the APIKit bad request error handler response">
+        <munit:execution>
+            <try doc:name="Try">
+                <raise-error doc:name="Raise APIKIT:BAD_REQUEST" type="APIKIT:BAD_REQUEST" description="Test bad request error"/>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="APIKIT:BAD_REQUEST">
+                        <ee:transform doc:name="Transform Message">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                            </ee:message>
+                            <ee:variables>
+                                <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                            </ee:variables>
+                        </ee:transform>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert httpStatus variable" actual="#[vars.httpStatus]" expected="#[400]"/>
+            <munit-tools:assert-that doc:name="Assert payload message" expression="#[payload.message]" is="#[MunitTools::equalTo('Bad request')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="test-apikit-not-found-error-handler" doc:name="Test APIKIT NOT_FOUND error handler" description="Test the APIKit not found error handler response">
+        <munit:execution>
+            <try doc:name="Try">
+                <raise-error doc:name="Raise APIKIT:NOT_FOUND" type="APIKIT:NOT_FOUND" description="Test not found error"/>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="APIKIT:NOT_FOUND">
+                        <ee:transform doc:name="Transform Message">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                            </ee:message>
+                            <ee:variables>
+                                <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                            </ee:variables>
+                        </ee:transform>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert httpStatus variable" actual="#[vars.httpStatus]" expected="#[404]"/>
+            <munit-tools:assert-that doc:name="Assert payload message" expression="#[payload.message]" is="#[MunitTools::equalTo('Resource not found')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="test-apikit-method-not-allowed-error-handler" doc:name="Test APIKIT METHOD_NOT_ALLOWED error handler" description="Test the APIKit method not allowed error handler response">
+        <munit:execution>
+            <try doc:name="Try">
+                <raise-error doc:name="Raise APIKIT:METHOD_NOT_ALLOWED" type="APIKIT:METHOD_NOT_ALLOWED" description="Test method not allowed error"/>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" type="APIKIT:METHOD_NOT_ALLOWED">
+                        <ee:transform doc:name="Transform Message">
+                            <ee:message>
+                                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                            </ee:message>
+                            <ee:variables>
+                                <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                            </ee:variables>
+                        </ee:transform>
+                    </on-error-continue>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert httpStatus variable" actual="#[vars.httpStatus]" expected="#[405]"/>
+            <munit-tools:assert-that doc:name="Assert payload message" expression="#[payload.message]" is="#[MunitTools::equalTo('Method not allowed')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <!-- =============================================== -->
+    <!-- CONSOLE ENDPOINT TESTS -->
+    <!-- =============================================== -->
+
+    <munit:test name="test-api-console-access" doc:name="Test API console access" description="Test that API console endpoint is accessible">
+        <munit:execution>
+            <http:request method="GET" doc:name="GET /console" config-ref="HTTP_Request_configuration" path="/console/">
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 200" actual="#[attributes.statusCode]" expected="#[200]"/>
+        </munit:validation>
+    </munit:test>
+
+    <!-- =============================================== -->
+    <!-- BOUNDARY CONDITION TESTS -->
+    <!-- =============================================== -->
+
+    <munit:test name="get-carryover-boundary-year-test" doc:name="Test GET /carryover boundary year values" description="Test carryover request with boundary year values">
+        <munit:execution>
+            <http:request method="GET" doc:name="GET /carryover with year 1900" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                <http:query-params><![CDATA[#[{
+                    year: 1900,
+                    month: 1
+                }]]]></http:query-params>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 200" actual="#[attributes.statusCode]" expected="#[200]"/>
+            <munit-tools:assert-that doc:name="Assert payload is array" expression="#[payload]" is="#[MunitTools::instanceOf('Array')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="get-carryover-boundary-month-test" doc:name="Test GET /carryover boundary month values" description="Test carryover request with boundary month values">
+        <munit:execution>
+            <http:request method="GET" doc:name="GET /carryover with month 12" config-ref="HTTP_Request_configuration" path="/api/carryover">
+                <http:query-params><![CDATA[#[{
+                    year: 2026,
+                    month: 12
+                }]]]></http:query-params>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-equals doc:name="Assert status code 200" actual="#[attributes.statusCode]" expected="#[200]"/>
+            <munit-tools:assert-that doc:name="Assert payload is array" expression="#[payload]" is="#[MunitTools::instanceOf('Array')]"/>
+        </munit:validation>
+    </munit:test>
+
+</mule>

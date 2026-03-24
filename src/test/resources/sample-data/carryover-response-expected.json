@@ -1,0 +1,25 @@
+[
+  {
+    "entityid": "12345678",
+    "entity_name": "Acme Corp",
+    "marketid": 1,
+    "market": "North America",
+    "budget_cm": 10000,
+    "budget_ytd": 50000,
+    "unbudgeted_cm": 2000,
+    "unbudgeted_ytd": 10000,
+    "invoiced_cm": 15000,
+    "invoiced_ytd": 75000,
+    "variance_cm": 5000,
+    "variance_ytd": 25000,
+    "savings_cm": 1000,
+    "savings_ytd": 5000,
+    "carryover_expected_cm": 3000,
+    "carryover_expected_ytd": 15000,
+    "projection_completed": 12000,
+    "projection_estimate": 13000,
+    "projection": 12500,
+    "budget": 15000,
+    "variance": 5000
+  }
+]

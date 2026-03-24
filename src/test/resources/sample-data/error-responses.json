@@ -1,0 +1,20 @@
+{
+  "badRequest": {
+    "message": "Bad request"
+  },
+  "notFound": {
+    "message": "Resource not found"
+  },
+  "methodNotAllowed": {
+    "message": "Method not allowed"
+  },
+  "notAcceptable": {
+    "message": "Not acceptable"
+  },
+  "unsupportedMediaType": {
+    "message": "Unsupported media type"
+  },
+  "notImplemented": {
+    "message": "Not Implemented"
+  }
+}
