@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   version: 1.0.0
   title: carryover-calculation-api
-  description: This API calculates the carryover values for a given year and month based on various financial data.
+  description: The API calculates the carryover values for a given year and month based on various financial data.
 paths:
   /carryover:
     get:
